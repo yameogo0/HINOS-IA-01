@@ -1,13 +1,14 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import "./globals.css"  // ← Cette ligne est correcte, l'erreur est un faux positif
+import "./globals.css"
+import { PiScriptLoader } from "@/components/PiScriptLoader"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Hinos IA",
   description: "Votre Partenaire Intelligence Artificielle pour une Production Animale et Agroalimentaire d'Excellence",
-    generator: 'v0.app'
+  generator: 'v0.app'
 }
 
 export const viewport = {
@@ -23,7 +24,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={inter.className}>{children}</body>
+      <head>
+        {/* Script SDK Pi Network */}
+        <script src="https://sdk.minepi.com/pi-sdk.js" async />
+      </head>
+      <body className={inter.className}>
+        <PiScriptLoader />
+        {children}
+      </body>
     </html>
   )
 }
