@@ -2,7 +2,7 @@
 import { NextRequest } from 'next/server'
 
 // 🔑 Ta clé Groq
-const GROQ_API_KEY = "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"
+const GROQ_API_KEY = "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"
 
 // 🔍 Fonction pour détecter automatiquement la langue avec une meilleure logique
 function detectLanguage(text: string): string {
