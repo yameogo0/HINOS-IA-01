@@ -1,7 +1,5 @@
 'use client'
 
-'use client'
-
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -232,7 +230,7 @@ export function PiWalletManager() {
             )}
           </Button>
           <p className="text-xs text-center text-gray-400">
-            {window.Pi ? '✅ SDK Pi chargé' : '📦 Chargement du SDK Pi...'}
+            {typeof window !== 'undefined' && window.Pi ? '✅ SDK Pi chargé' : '📦 Chargement du SDK Pi...'}
           </p>
         </CardContent>
       </Card>
