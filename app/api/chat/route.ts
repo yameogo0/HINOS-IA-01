@@ -1,8 +1,8 @@
 // app/api/chat/route.ts
 import { NextRequest } from 'next/server'
 
-// 🔑 Ta clé Groq
-const GROQ_API_KEY = "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"
+// 🔑 Clé API via variable d'environnement (plus sécurisé)
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ""
 
 // 🔍 Fonction pour détecter automatiquement la langue avec une meilleure logique
 function detectLanguage(text: string): string {
@@ -138,6 +138,15 @@ export async function POST(request: NextRequest) {
 
     if (!message) {
       return Response.json({ error: "Message requis" }, { status: 400 })
+    }
+
+    // Vérification que la clé API est configurée
+    if (!GROQ_API_KEY) {
+      console.error("❌ Clé API Groq manquante")
+      return Response.json({ 
+        response: "❌ Configuration API manquante. Veuillez contacter l'administrateur.",
+        detectedLanguage: detectedLanguage
+      })
     }
 
     // ✅ Utilisation du nouveau modèle recommandé
