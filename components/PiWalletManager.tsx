@@ -1,5 +1,7 @@
 'use client'
 
+'use client'
+
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,42 +29,54 @@ export function PiWalletManager() {
   const [balance, setBalance] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPiSDKReady, setIsPiSDKReady] = useState(false)
+  const [sdkCheckDone, setSdkCheckDone] = useState(false)
 
-  // ✅ CORRIGÉ : Vérifier si le SDK Pi est chargé (avec polling amélioré)
+  // Vérifier si le SDK Pi est chargé (plus robuste)
   useEffect(() => {
-    let interval: NodeJS.Timeout
-    let timeout: NodeJS.Timeout
+    let attempts = 0
+    const maxAttempts = 20 // 10 secondes max
 
     const checkPiSDK = () => {
-      if (typeof window !== 'undefined' && window.Pi) {
+      attempts++
+      
+      if (typeof window !== 'undefined' && window.Pi && window.Pi.authenticate) {
+        console.log('✅ Pi SDK chargé et prêt')
         setIsPiSDKReady(true)
-        console.log('✅ Pi SDK détecté par WalletManager')
+        setSdkCheckDone(true)
         return true
       }
+      
+      if (attempts >= maxAttempts) {
+        console.log('❌ Pi SDK non trouvé après 10 secondes')
+        setIsPiSDKReady(false)
+        setSdkCheckDone(true)
+        return false
+      }
+      
       return false
     }
 
-    // Vérifier immédiatement
+    // Vérification immédiate
     if (checkPiSDK()) return
 
-    // Sinon, attendre que le script charge window.Pi (polling toutes les 200ms)
-    interval = setInterval(() => {
-      if (checkPiSDK()) {
-        clearInterval(interval)
+    // Vérification périodique
+    const interval = setInterval(() => {
+      if (checkPiSDK()) clearInterval(interval)
+    }, 500)
+
+    // Charger le SDK manuellement si nécessaire
+    if (!window.Pi) {
+      const script = document.createElement('script')
+      script.src = 'https://sdk.minepi.com/pi-sdk.js'
+      script.async = true
+      script.onload = () => {
+        console.log('📦 Script Pi SDK chargé')
+        setTimeout(() => checkPiSDK(), 500)
       }
-    }, 200)
-
-    // Timeout après 10 secondes
-    timeout = setTimeout(() => {
-      clearInterval(interval)
-      console.warn('⚠️ Pi SDK non détecté après timeout, mode démo')
-      setIsPiSDKReady(false)
-    }, 10000)
-
-    return () => {
-      if (interval) clearInterval(interval)
-      if (timeout) clearTimeout(timeout)
+      document.head.appendChild(script)
     }
+
+    return () => clearInterval(interval)
   }, [])
 
   // Charger les données du wallet depuis localStorage
@@ -87,11 +101,12 @@ export function PiWalletManager() {
     setError(null)
     
     try {
-      const isSandbox = process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX === 'true'
+      const isSandbox = process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX !== 'false'
       
-      // Mode production avec SDK Pi réel
-      if (isPiSDKReady && !isSandbox) {
-        const scopes = ['username', 'wallet_address', 'payments']
+      // Vérifier si le SDK Pi est disponible
+      if (window.Pi && window.Pi.authenticate) {
+        console.log('🔐 Authentification Pi en cours...')
+        const scopes = ['username', 'wallet_address']
         
         const auth = await window.Pi.authenticate(scopes, (err: any) => {
           console.error('Erreur auth Pi:', err)
@@ -113,11 +128,9 @@ export function PiWalletManager() {
           localStorage.setItem('pi_wallet_user', JSON.stringify(walletData))
           console.log('✅ Wallet Pi connecté:', walletData.username)
         }
-      } 
-      // Mode sandbox / démo
-      else {
+      } else {
+        // Mode sandbox / démo
         console.log('🏖️ Mode sandbox - Wallet simulé')
-        // Simuler un délai d'authentification
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         const demoUser: WalletUser = {
@@ -132,7 +145,7 @@ export function PiWalletManager() {
         setIsConnected(true)
         setBalance(50)
         localStorage.setItem('pi_wallet_user', JSON.stringify(demoUser))
-        console.log('🎭 Mode démo - Wallet simulé:', demoUser.username)
+        console.log('🎭 Mode sandbox - Wallet simulé:', demoUser.username)
       }
     } catch (error: any) {
       console.error('❌ Erreur connexion wallet:', error)
@@ -165,10 +178,7 @@ export function PiWalletManager() {
   const handleRefreshBalance = async () => {
     setIsLoading(true)
     try {
-      // Simuler une récupération du solde (à remplacer par API réelle)
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Générer un nouveau solde aléatoire entre 10 et 100
       const newBalance = Math.floor(Math.random() * 90) + 10
       setBalance(newBalance)
       
@@ -221,17 +231,9 @@ export function PiWalletManager() {
               </span>
             )}
           </Button>
-          {/* ✅ CORRIGÉ : Message plus précis */}
-          {!isPiSDKReady && (
-            <p className="text-xs text-center text-amber-600 bg-amber-50 p-2 rounded-lg">
-              💡 Mode démo actif - Chargement du SDK Pi en cours...
-            </p>
-          )}
-          {isPiSDKReady && process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX === 'true' && (
-            <p className="text-xs text-center text-blue-600 bg-blue-50 p-2 rounded-lg">
-              🎮 SDK Pi chargé - Mode sandbox actif
-            </p>
-          )}
+          <p className="text-xs text-center text-gray-400">
+            {window.Pi ? '✅ SDK Pi chargé' : '📦 Chargement du SDK Pi...'}
+          </p>
         </CardContent>
       </Card>
     )
@@ -299,18 +301,9 @@ export function PiWalletManager() {
         </div>
 
         {/* Mode sandbox indication */}
-        {process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX === 'true' && (
-          <div className="bg-yellow-50 rounded-lg p-2 text-center text-xs text-yellow-700 border border-yellow-200">
-            🏖️ Mode Sandbox - Transactions simulées
-          </div>
-        )}
-
-        {/* ✅ AJOUTÉ : Statut du SDK */}
-        {!isPiSDKReady && (
-          <div className="bg-amber-50 rounded-lg p-2 text-center text-xs text-amber-700 border border-amber-200">
-            ⚠️ SDK Pi non disponible - Mode démo uniquement
-          </div>
-        )}
+        <div className="bg-yellow-50 rounded-lg p-2 text-center text-xs text-yellow-700 border border-yellow-200">
+          🏖️ Mode Sandbox - Transactions simulées
+        </div>
 
         {/* Boutons d'action */}
         <div className="flex gap-2 pt-3 border-t border-green-200">
