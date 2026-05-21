@@ -1,4 +1,3 @@
-// components/PiScriptLoader.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -13,28 +12,40 @@ export function PiScriptLoader() {
   const [isPiReady, setIsPiReady] = useState(false)
 
   useEffect(() => {
-    const initPiSDK = () => {
+    // Fonction pour charger le SDK
+    const loadPiSDK = () => {
+      // Vérifier si Pi est déjà disponible
       if (typeof window !== 'undefined' && window.Pi) {
-        console.log('✅ Pi SDK chargé avec succès')
+        console.log('✅ Pi SDK déjà présent')
         window.Pi.init({
           version: '2.0',
-          sandbox: process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX === 'true'
+          sandbox: true
         })
         setIsPiReady(true)
         return true
       }
-      return false
+      
+      // Créer et charger le script
+      const script = document.createElement('script')
+      script.src = 'https://sdk.minepi.com/pi-sdk.js'
+      script.async = true
+      script.onload = () => {
+        if (window.Pi) {
+          console.log('✅ Pi SDK chargé avec succès')
+          window.Pi.init({
+            version: '2.0',
+            sandbox: true
+          })
+          setIsPiReady(true)
+        }
+      }
+      script.onerror = () => {
+        console.error('❌ Erreur chargement Pi SDK')
+      }
+      document.head.appendChild(script)
     }
 
-    // Vérification immédiate
-    if (initPiSDK()) return
-
-    // Si pas encore chargé, on vérifie toutes les 500ms
-    const interval = setInterval(() => {
-      if (initPiSDK()) clearInterval(interval)
-    }, 500)
-
-    return () => clearInterval(interval)
+    loadPiSDK()
   }, [])
 
   return null
