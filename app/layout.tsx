@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -8,14 +9,6 @@ export const metadata: Metadata = {
   title: "Hinos IA",
   description: "Votre Partenaire Intelligence Artificielle pour une Production Animale et Agroalimentaire d'Excellence",
   generator: 'v0.app',
-  keywords: "agriculture, élevage, pisciculture, IA, Pi Network, Burkina Faso, Angola",
-  authors: [{ name: "Hinos IA" }],
-  viewport: "width=device-width, initial-scale=1",
-  openGraph: {
-    title: "Hinos IA",
-    description: "Assistant IA pour l'agriculture en Afrique",
-    type: "website",
-  }
 }
 
 export const viewport = {
@@ -32,10 +25,10 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        {/* Pi Network SDK - Chargement automatique */}
-        <script
+        {/* Pi Network SDK - Chargement via Next.js Script component */}
+        <Script
           src="https://sdk.minepi.com/pi-sdk.js"
-          async
+          strategy="afterInteractive"
           onLoad={() => {
             if (typeof window !== 'undefined' && window.Pi) {
               console.log('✅ Pi SDK chargé avec succès')
@@ -47,9 +40,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
