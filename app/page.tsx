@@ -1,69 +1,35 @@
-'use client'
+// app/page.tsx
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-import { useState } from 'react'
 import Chatbot from '@/components/Chatbot'
 import Link from 'next/link'
-import { Wallet, CreditCard, Zap } from 'lucide-react'
 
 export default function Home() {
-  const [showDemo, setShowDemo] = useState(false)
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-emerald-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">H</span>
+    <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Bandeau Pi Network */}
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 mb-8 text-white shadow-lg">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-3 rounded-xl">
+                <span className="text-2xl">π</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Hinos IA</h2>
+                <p className="text-white/80 text-sm">Assistant IA pour Agriculture • Élevage • Pisciculture • Transformation</p>
+              </div>
             </div>
-            <span className="font-bold text-xl text-gray-800">Hinos IA</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-500 hidden sm:block">
-              🌍 Français • Português • English
-            </div>
-            <Link href="/settings" className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-emerald-600 text-white text-sm font-medium hover:shadow-lg transition">
-              ⚙️ Paramètres
+            <Link href="/settings">
+              <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition flex items-center gap-2">
+                ⚙️ Paramètres
+              </button>
             </Link>
           </div>
         </div>
-      </header>
 
-      <section className="container mx-auto px-6 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent mb-4">
-            Hinos IA
-          </h1>
-          <p className="text-xl text-gray-600 mb-6">
-            Assistant IA pour Agriculture • Élevage • Pisciculture • Transformation
-          </p>
-          
-          {/* Banneau des caractéristiques Pi Network */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <Wallet className="w-6 h-6 mx-auto text-blue-600 mb-2" />
-              <h3 className="font-semibold text-gray-800">Wallet Pi Network</h3>
-              <p className="text-sm text-gray-600">Connectez votre portefeuille Pi</p>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <CreditCard className="w-6 h-6 mx-auto text-green-600 mb-2" />
-              <h3 className="font-semibold text-gray-800">Paiements en Pi</h3>
-              <p className="text-sm text-gray-600">Payez vos abonnements facilement</p>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <Zap className="w-6 h-6 mx-auto text-purple-600 mb-2" />
-              <h3 className="font-semibold text-gray-800">Premium Features</h3>
-              <p className="text-sm text-gray-600">Accédez à des analyses avancées</p>
-            </div>
-          </div>
-
-          <p className="text-gray-500 mb-6">
-            🇫🇷 Français | 🇵🇹 Português | 🇬🇧 English
-          </p>
-        </div>
-      </section>
-
-      <div className="container mx-auto px-6 pb-12 max-w-4xl">
+        {/* Chatbot */}
         <Chatbot />
       </div>
     </main>
