@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Check, Zap } from 'lucide-react'
+import { Check, Zap, Loader2 } from 'lucide-react'
 import { usePiPaymentSimple } from '@/hooks/use-pi-payment-simple'
 
 interface Plan {
@@ -49,28 +49,40 @@ const PLANS: Plan[] = [
 ]
 
 export function PiSubscriptionPlans() {
-  const { initiatePayment, isProcessing, paymentStatus } = usePiPaymentSimple()
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const { initiatePayment, isProcessing, paymentStatus, resetStatus } = usePiPaymentSimple()
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [localMessage, setLocalMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const handleSubscribe = async (plan: Plan) => {
-    setSelectedPlan(plan.id)
-    
-    const result = await initiatePayment({
-      amount: plan.price,
-      planId: plan.id,
-      memo: `Abonnement ${plan.name} - ${plan.duration}`
-    })
+    setSelectedPlanId(plan.id)
+    setLocalMessage(null)
+    resetStatus()
 
-    if (result.success) {
-      // Sauvegarder l'abonnement
-      localStorage.setItem('hinos_subscription', JSON.stringify(result.subscription))
-      alert('✅ Abonnement activé avec succès!')
-      window.location.reload()
-    } else {
-      alert('❌ Erreur: ' + result.error)
+    try {
+      const result = await initiatePayment({
+        amount: plan.price,
+        planId: plan.id,
+        memo: `Abonnement ${plan.name} - ${plan.duration}`
+      })
+
+      if (result.success && result.subscription) {
+        // Sauvegarder l'abonnement
+        localStorage.setItem('hinos_subscription', JSON.stringify(result.subscription))
+        setLocalMessage({ type: 'success', text: `✅ Abonnement ${plan.name} activé avec succès !` })
+        
+        // Recharger après 2 secondes
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else {
+        setLocalMessage({ type: 'error', text: result.error || '❌ Erreur lors du paiement' })
+      }
+    } catch (error: any) {
+      console.error('Erreur:', error)
+      setLocalMessage({ type: 'error', text: '❌ Erreur inattendue. Veuillez réessayer.' })
+    } finally {
+      setSelectedPlanId(null)
     }
-
-    setSelectedPlan(null)
   }
 
   return (
@@ -81,10 +93,24 @@ export function PiSubscriptionPlans() {
         <p className="text-gray-600">Choisissez le plan qui vous convient le mieux</p>
       </div>
 
-      {/* Statut du paiement */}
-      {paymentStatus && (
+      {/* Statut du paiement (global) */}
+      {paymentStatus && !localMessage && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <p className="text-blue-800">{paymentStatus}</p>
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <p className="text-blue-800">{paymentStatus}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Message local (succès/erreur) */}
+      {localMessage && (
+        <div className={`rounded-lg p-4 text-center ${
+          localMessage.type === 'success' 
+            ? 'bg-green-50 border border-green-200 text-green-800' 
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {localMessage.text}
         </div>
       )}
 
@@ -94,20 +120,20 @@ export function PiSubscriptionPlans() {
           <div key={plan.id} className="relative">
             {/* Badge populaire */}
             {plan.popular && (
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
                   ⭐ Populaire
                 </span>
               </div>
             )}
 
             <Card className={`h-full transition-all ${
-              plan.popular ? 'border-2 border-purple-500 shadow-lg' : 'border-gray-200'
-            } ${selectedPlan === plan.id ? 'opacity-75' : ''}`}>
+              plan.popular ? 'border-2 border-purple-500 shadow-xl' : 'border-gray-200'
+            } ${selectedPlanId === plan.id ? 'opacity-75' : ''}`}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>{plan.name}</span>
-                  {plan.popular && <Zap className="w-5 h-5 text-yellow-500" />}
+                  <span className="text-xl">{plan.name}</span>
+                  {plan.popular && <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />}
                 </CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
@@ -124,16 +150,16 @@ export function PiSubscriptionPlans() {
                 {/* Bouton d'action */}
                 <Button
                   onClick={() => handleSubscribe(plan)}
-                  disabled={isProcessing || selectedPlan !== null}
-                  className={`w-full py-2 ${
+                  disabled={isProcessing || selectedPlanId !== null}
+                  className={`w-full py-6 text-base font-semibold ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md'
                       : 'bg-gray-800 hover:bg-gray-900'
                   } text-white transition-all`}
                 >
-                  {selectedPlan === plan.id && isProcessing ? (
+                  {selectedPlanId === plan.id && isProcessing ? (
                     <>
-                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       Traitement...
                     </>
                   ) : (
@@ -144,7 +170,7 @@ export function PiSubscriptionPlans() {
                 </Button>
 
                 {/* Caractéristiques */}
-                <ul className="space-y-3">
+                <ul className="space-y-3 pt-2">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -161,7 +187,7 @@ export function PiSubscriptionPlans() {
       {/* Information supplémentaire */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
         <p className="text-sm text-amber-800">
-          🎯 Vous avez besoin d&apos;aide? <a href="#" className="font-semibold hover:underline">Contactez notre support</a>
+          🎯 Une question ? <a href="#" className="font-semibold hover:underline">Contactez notre support</a>
         </p>
       </div>
     </div>
