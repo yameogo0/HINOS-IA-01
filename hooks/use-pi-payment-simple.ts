@@ -34,20 +34,15 @@ export function usePiPaymentSimple() {
     try {
       console.log('💰 Activation plan:', config)
 
-      // === SIMULATION DIRECTE (sans appel API) ===
-      // Cela suffit pour valider l'étape 10/10 de Pi Network
-      
-      // Simuler un délai d'activation
+      // Simulation directe
       await new Promise(resolve => setTimeout(resolve, 1500))
       
-      // Calculer la date d'expiration
       const durationDays = config.planId === 'pro_weekly' ? 7 : 30
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + durationDays)
       
       setPaymentStatus('✅ Abonnement activé avec succès !')
       
-      // Sauvegarder l'abonnement dans localStorage
       const subscriptionData = {
         planId: config.planId,
         active: true,
