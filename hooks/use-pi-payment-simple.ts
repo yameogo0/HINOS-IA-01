@@ -1,66 +1,40 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-
-export interface PiPaymentConfig {
-  amount: number
-  planId: string
-  memo: string
-}
-
-export interface PiPaymentResult {
-  success: boolean
-  paymentId?: string
-  txid?: string
-  subscription?: {
-    planId: string
-    active: boolean
-    activatedAt: string
-    expiresAt: string
-  }
-  error?: string
-}
+import { useState } from 'react'
 
 export function usePiPaymentSimple() {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<string>('')
-  const [error, setError] = useState<string | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState('')
+  const [error, setError] = useState(null)
 
-  const initiatePayment = useCallback(async (config: PiPaymentConfig): Promise<PiPaymentResult> => {
+  const initiatePayment = async (config) => {
+    console.log('💰 Paiement démarré:', config)
     setIsProcessing(true)
-    setError(null)
     setPaymentStatus('🔄 Activation...')
-
-    // Simulation directe - pas d'appel API
-    await new Promise(resolve => setTimeout(resolve, 1500))
     
-    const durationDays = config.planId === 'pro_weekly' ? 7 : 30
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + durationDays)
+    // Simulation d'attente
+    await new Promise(r => setTimeout(r, 1500))
     
-    const subscriptionData = {
+    // Sauvegarde de l'abonnement
+    const subscription = {
       planId: config.planId,
       active: true,
       activatedAt: new Date().toISOString(),
-      expiresAt: expiresAt.toISOString()
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
+    localStorage.setItem('hinos_subscription', JSON.stringify(subscription))
     
-    localStorage.setItem('hinos_subscription', JSON.stringify(subscriptionData))
     setPaymentStatus('✅ Activé !')
     setIsProcessing(false)
     
-    return {
-      success: true,
-      paymentId: 'sim_' + Date.now(),
-      subscription: subscriptionData
-    }
-  }, [])
+    return { success: true, subscription }
+  }
 
-  const resetStatus = useCallback(() => {
+  const resetStatus = () => {
     setPaymentStatus('')
     setError(null)
     setIsProcessing(false)
-  }, [])
+  }
 
   return {
     initiatePayment,
