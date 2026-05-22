@@ -29,6 +29,16 @@ export function PiWalletManager() {
   const [isPiSDKReady, setIsPiSDKReady] = useState(false)
   const [sdkCheckDone, setSdkCheckDone] = useState(false)
 
+  // FORCER le mode production (désactiver le sandbox)
+  const isSandbox = false
+  const PI_API_KEY = process.env.PI_API_KEY
+
+  console.log('🔧 Configuration Pi Wallet:', { 
+    isSandbox, 
+    hasPiKey: !!PI_API_KEY,
+    mode: isSandbox ? 'SANDBOX' : 'PRODUCTION'
+  })
+
   // Vérifier si le SDK Pi est chargé (plus robuste)
   useEffect(() => {
     let attempts = 0
@@ -63,7 +73,7 @@ export function PiWalletManager() {
     }, 500)
 
     // Charger le SDK manuellement si nécessaire
-    if (!window.Pi) {
+    if (typeof window !== 'undefined' && !window.Pi) {
       const script = document.createElement('script')
       script.src = 'https://sdk.minepi.com/pi-sdk.js'
       script.async = true
@@ -99,11 +109,9 @@ export function PiWalletManager() {
     setError(null)
     
     try {
-      const isSandbox = process.env.NEXT_PUBLIC_PI_NETWORK_SANDBOX !== 'false'
-      
-      // Vérifier si le SDK Pi est disponible
-      if (window.Pi && window.Pi.authenticate) {
-        console.log('🔐 Authentification Pi en cours...')
+      // Vérifier si le SDK Pi est disponible en mode production
+      if (window.Pi && window.Pi.authenticate && !isSandbox) {
+        console.log('🔐 Authentification Pi en cours (production)...')
         const scopes = ['username', 'wallet_address']
         
         const auth = await window.Pi.authenticate(scopes, (err: any) => {
@@ -124,26 +132,25 @@ export function PiWalletManager() {
           setIsConnected(true)
           setBalance(0)
           localStorage.setItem('pi_wallet_user', JSON.stringify(walletData))
-          console.log('✅ Wallet Pi connecté:', walletData.username)
+          console.log('✅ Wallet Pi connecté (production):', walletData.username)
         }
       } else {
-        // Mode sandbox / démo
-        console.log('🏖️ Mode sandbox - Wallet simulé')
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Mode démo uniquement si SDK non disponible
+        console.log('⚠️ Mode démo - SDK Pi non disponible')
         
         const demoUser: WalletUser = {
           uid: 'demo_' + Date.now(),
           username: 'demo_user_' + Math.floor(Math.random() * 1000),
           walletAddress: '0x' + Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-          balance: 50,
+          balance: 0,
           accessToken: 'demo_token_' + Date.now()
         }
         
         setUser(demoUser)
         setIsConnected(true)
-        setBalance(50)
+        setBalance(0)
         localStorage.setItem('pi_wallet_user', JSON.stringify(demoUser))
-        console.log('🎭 Mode sandbox - Wallet simulé:', demoUser.username)
+        console.log('🎭 Mode démo - Wallet simulé:', demoUser.username)
       }
     } catch (error: any) {
       console.error('❌ Erreur connexion wallet:', error)
@@ -165,7 +172,7 @@ export function PiWalletManager() {
 
   // Copier l'adresse du wallet
   const handleCopyAddress = () => {
-    if (user?.walletAddress) {
+    if (user?.walletAddress && user.walletAddress !== 'Non disponible') {
       navigator.clipboard.writeText(user.walletAddress)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -176,7 +183,8 @@ export function PiWalletManager() {
   const handleRefreshBalance = async () => {
     setIsLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // En production, le solde réel viendrait de l'API
+      // Pour l'instant, on simule
       const newBalance = Math.floor(Math.random() * 90) + 10
       setBalance(newBalance)
       
@@ -232,6 +240,11 @@ export function PiWalletManager() {
           <p className="text-xs text-center text-gray-400">
             {typeof window !== 'undefined' && window.Pi ? '✅ SDK Pi chargé' : '📦 Chargement du SDK Pi...'}
           </p>
+          {!isSandbox && (
+            <p className="text-xs text-center text-green-600">
+              🔐 Mode Production actif
+            </p>
+          )}
         </CardContent>
       </Card>
     )
@@ -298,10 +311,16 @@ export function PiWalletManager() {
           </div>
         </div>
 
-        {/* Mode sandbox indication */}
-        <div className="bg-yellow-50 rounded-lg p-2 text-center text-xs text-yellow-700 border border-yellow-200">
-          🏖️ Mode Sandbox - Transactions simulées
-        </div>
+        {/* Indication du mode */}
+        {!isSandbox ? (
+          <div className="bg-green-50 rounded-lg p-2 text-center text-xs text-green-700 border border-green-200">
+            🔐 Mode Production - Transactions réelles
+          </div>
+        ) : (
+          <div className="bg-yellow-50 rounded-lg p-2 text-center text-xs text-yellow-700 border border-yellow-200">
+            🏖️ Mode Sandbox - Transactions simulées
+          </div>
+        )}
 
         {/* Boutons d'action */}
         <div className="flex gap-2 pt-3 border-t border-green-200">
