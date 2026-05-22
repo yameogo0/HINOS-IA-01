@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, Zap, Loader2 } from 'lucide-react'
@@ -53,6 +53,21 @@ export function PiSubscriptionPlans() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [localMessage, setLocalMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // ✅ Charger l'abonnement existant au démarrage
+  useEffect(() => {
+    const saved = localStorage.getItem('hinos_subscription')
+    if (saved) {
+      const sub = JSON.parse(saved)
+      if (sub.active && new Date(sub.expiresAt) > new Date()) {
+        const planName = sub.planId === 'pro_weekly' ? 'Pro' : 'Premium'
+        setLocalMessage({ 
+          type: 'success', 
+          text: `✅ Abonnement ${planName} déjà activé !` 
+        })
+      }
+    }
+  }, [])
+
   const handleSubscribe = async (plan: Plan) => {
     setSelectedPlanId(plan.id)
     setLocalMessage(null)
@@ -66,11 +81,9 @@ export function PiSubscriptionPlans() {
       })
 
       if (result.success && result.subscription) {
-        // Sauvegarder l'abonnement
         localStorage.setItem('hinos_subscription', JSON.stringify(result.subscription))
         setLocalMessage({ type: 'success', text: `✅ Abonnement ${plan.name} activé avec succès !` })
         
-        // Recharger après 2 secondes
         setTimeout(() => {
           window.location.reload()
         }, 2000)
@@ -87,13 +100,11 @@ export function PiSubscriptionPlans() {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold">Plans d&apos;abonnement</h2>
         <p className="text-gray-600">Choisissez le plan qui vous convient le mieux</p>
       </div>
 
-      {/* Statut du paiement (global) */}
       {paymentStatus && !localMessage && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center gap-2">
@@ -103,7 +114,6 @@ export function PiSubscriptionPlans() {
         </div>
       )}
 
-      {/* Message local (succès/erreur) */}
       {localMessage && (
         <div className={`rounded-lg p-4 text-center ${
           localMessage.type === 'success' 
@@ -114,11 +124,9 @@ export function PiSubscriptionPlans() {
         </div>
       )}
 
-      {/* Grille des plans */}
       <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {PLANS.map((plan) => (
           <div key={plan.id} className="relative">
-            {/* Badge populaire */}
             {plan.popular && (
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
@@ -139,7 +147,6 @@ export function PiSubscriptionPlans() {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                {/* Prix */}
                 <div className="space-y-1">
                   <div className="text-4xl font-bold text-gray-900">
                     {plan.price}π
@@ -147,7 +154,6 @@ export function PiSubscriptionPlans() {
                   <p className="text-sm text-gray-600">pour {plan.duration}</p>
                 </div>
 
-                {/* Bouton d'action */}
                 <Button
                   onClick={() => handleSubscribe(plan)}
                   disabled={isProcessing || selectedPlanId !== null}
@@ -169,7 +175,6 @@ export function PiSubscriptionPlans() {
                   )}
                 </Button>
 
-                {/* Caractéristiques */}
                 <ul className="space-y-3 pt-2">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
@@ -184,7 +189,6 @@ export function PiSubscriptionPlans() {
         ))}
       </div>
 
-      {/* Information supplémentaire */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
         <p className="text-sm text-amber-800">
           🎯 Une question ? <a href="#" className="font-semibold hover:underline">Contactez notre support</a>
