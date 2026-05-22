@@ -19,7 +19,7 @@ export function PiScriptLoader() {
         console.log('✅ Pi SDK déjà présent')
         window.Pi.init({
           version: '2.0',
-          sandbox: true
+          sandbox: false  // ← MODE PRODUCTION
         })
         setIsPiReady(true)
         return true
@@ -34,7 +34,7 @@ export function PiScriptLoader() {
           console.log('✅ Pi SDK chargé avec succès')
           window.Pi.init({
             version: '2.0',
-            sandbox: true
+            sandbox: false  // ← MODE PRODUCTION
           })
           setIsPiReady(true)
         }
