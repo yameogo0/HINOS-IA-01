@@ -1,5 +1,7 @@
 'use client'
 
+'use client'
+
 import { useState, useCallback } from 'react'
 
 export interface PiPaymentConfig {
@@ -29,19 +31,18 @@ export function usePiPaymentSimple() {
   const initiatePayment = useCallback(async (config: PiPaymentConfig): Promise<PiPaymentResult> => {
     setIsProcessing(true)
     setError(null)
-    setPaymentStatus('🔄 Activation en cours...')
+    setPaymentStatus('🔄 Activation de l\'abonnement...')
 
     try {
-      console.log('💰 Activation plan:', config)
+      console.log('💰 Activation du plan:', config.planId)
 
-      // Simulation directe
+      // Simulation directe - pas d'appel API
       await new Promise(resolve => setTimeout(resolve, 1500))
       
+      // Calculer la date d'expiration
       const durationDays = config.planId === 'pro_weekly' ? 7 : 30
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + durationDays)
-      
-      setPaymentStatus('✅ Abonnement activé avec succès !')
       
       const subscriptionData = {
         planId: config.planId,
@@ -49,7 +50,11 @@ export function usePiPaymentSimple() {
         activatedAt: new Date().toISOString(),
         expiresAt: expiresAt.toISOString()
       }
+      
+      // Sauvegarder dans localStorage
       localStorage.setItem('hinos_subscription', JSON.stringify(subscriptionData))
+      
+      setPaymentStatus('✅ Abonnement activé avec succès !')
       
       return {
         success: true,
@@ -58,7 +63,7 @@ export function usePiPaymentSimple() {
       }
       
     } catch (err: any) {
-      const errorMsg = err?.message || 'Erreur de paiement'
+      const errorMsg = err?.message || 'Erreur d\'activation'
       console.error('❌ Erreur:', errorMsg)
       setError(errorMsg)
       setPaymentStatus('❌ ' + errorMsg)
