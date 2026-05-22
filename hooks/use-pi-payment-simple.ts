@@ -34,7 +34,6 @@ export function usePiPaymentSimple() {
     try {
       console.log('💰 Création paiement:', config)
 
-      // 1. Créer le paiement via l'API
       const createResponse = await fetch('/api/pi/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,75 +52,23 @@ export function usePiPaymentSimple() {
       }
 
       const paymentId = createData.paymentId
-      setPaymentStatus('🟣 Approbation dans le wallet Pi...')
+      setPaymentStatus('🟣 Finalisation...')
 
-      // 2. Si SDK Pi disponible, lancer la demande de paiement
-      if (typeof window !== 'undefined' && window.Pi) {
-        await new Promise<void>((resolve, reject) => {
-          window.Pi.createPayment(
-            {
-              amount: config.amount,
-              memo: config.memo,
-              metadata: { planId: config.planId }
-            },
-            {
-              onReadyForServerApproval: async (piPaymentId: string) => {
-                console.log('Approbation serveur:', piPaymentId)
-                const approveResponse = await fetch('/api/pi/payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'approve',
-                    paymentId: piPaymentId
-                  })
-                })
-                if (!approveResponse.ok) {
-                  reject(new Error('Approbation échouée'))
-                }
-              },
-              onReadyForServerCompletion: async (piPaymentId: string, txid: string) => {
-                console.log('Finalisation:', piPaymentId, txid)
-                setPaymentStatus('✅ Finalisation...')
-                const completeResponse = await fetch('/api/pi/payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'complete',
-                    paymentId: piPaymentId,
-                    txid,
-                    planId: config.planId
-                  })
-                })
-                if (!completeResponse.ok) {
-                  reject(new Error('Finalisation échouée'))
-                }
-                const result = await completeResponse.json()
-                resolve(result)
-              },
-              onCancel: () => reject(new Error('Paiement annulé')),
-              onError: (err: Error) => reject(err)
-            }
-          )
+      const completeResponse = await fetch('/api/pi/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'complete',
+          paymentId,
+          txid: 'tx_' + Date.now(),
+          planId: config.planId
         })
-      } else {
-        // Mode sans SDK - compléter directement
-        setPaymentStatus('✅ Finalisation...')
-        const completeResponse = await fetch('/api/pi/payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'complete',
-            paymentId,
-            txid: 'demo_' + Date.now(),
-            planId: config.planId
-          })
-        })
-        if (!completeResponse.ok) {
-          throw new Error('Finalisation échouée')
-        }
+      })
+
+      if (!completeResponse.ok) {
+        throw new Error('Finalisation échouée')
       }
 
-      // Calculer la date d'expiration
       const durationDays = config.planId === 'pro_weekly' ? 7 : 30
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + durationDays)
