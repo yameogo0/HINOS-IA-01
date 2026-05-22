@@ -112,7 +112,8 @@ export function PiWalletManager() {
       // Vérifier si le SDK Pi est disponible en mode production
       if (window.Pi && window.Pi.authenticate && !isSandbox) {
         console.log('🔐 Authentification Pi en cours (production)...')
-        const scopes = ['username', 'wallet_address']
+        // ✅ AJOUT DU SCOPE 'payments'
+        const scopes = ['username', 'wallet_address', 'payments']
         
         const auth = await window.Pi.authenticate(scopes, (err: any) => {
           console.error('Erreur auth Pi:', err)
@@ -183,8 +184,6 @@ export function PiWalletManager() {
   const handleRefreshBalance = async () => {
     setIsLoading(true)
     try {
-      // En production, le solde réel viendrait de l'API
-      // Pour l'instant, on simule
       const newBalance = Math.floor(Math.random() * 90) + 10
       setBalance(newBalance)
       
@@ -276,7 +275,6 @@ export function PiWalletManager() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Affichage de l'adresse */}
         <div className="bg-white rounded-lg p-3 border border-green-200">
           <p className="text-xs text-gray-500 mb-1">Adresse du Wallet</p>
           <div className="flex items-center gap-2">
@@ -299,7 +297,6 @@ export function PiWalletManager() {
           </div>
         </div>
 
-        {/* Informations du compte */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="bg-white rounded-lg p-3 border border-green-200">
             <p className="text-xs text-gray-500">ID Utilisateur</p>
@@ -311,7 +308,6 @@ export function PiWalletManager() {
           </div>
         </div>
 
-        {/* Indication du mode */}
         {!isSandbox ? (
           <div className="bg-green-50 rounded-lg p-2 text-center text-xs text-green-700 border border-green-200">
             🔐 Mode Production - Transactions réelles
@@ -322,7 +318,6 @@ export function PiWalletManager() {
           </div>
         )}
 
-        {/* Boutons d'action */}
         <div className="flex gap-2 pt-3 border-t border-green-200">
           <Button
             onClick={handleRefreshBalance}
