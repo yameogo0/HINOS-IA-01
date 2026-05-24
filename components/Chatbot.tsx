@@ -275,7 +275,7 @@ export default function Chatbot() {
           <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] p-3 rounded-xl ${msg.sender === 'user' ? 'bg-purple-600 text-white' : 'bg-white text-gray-800 shadow-sm'}`}>
               {msg.isTyping ? <div className="flex gap-1 py-2"><span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" /></div> : <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
-              <span className="text-[10px] opacity-70 mt-1 block">{msg.timestamp.toLocaleTimeString()}</span>
+              <span className="text-[10px] opacity-70 mt-1 block" suppressHydrationWarning>{msg.timestamp.toLocaleTimeString()}</span>
             </div>
           </div>
         ))}
